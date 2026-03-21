@@ -1271,10 +1271,10 @@
                         </div>
                         <table class="w-full text-left">
                             <thead class="bg-slate-50 dark:bg-slate-900 text-[10px] uppercase font-bold text-slate-500">
-                                <tr><th class="p-5">Ad Soyad</th><th class="p-5">E-Posta</th><th class="p-5">Rol</th><th class="p-5 text-right">İşlemler</th></tr>
+                                <tr><th class="p-5">Ad Soyad</th><th class="p-5">E-Posta</th><th class="p-5">Rol</th><th class="p-5 text-right">İşlemler</th> </tr>
                             </thead>
                             <tbody id="userTableBody" class="divide-y dark:divide-slate-700"></tbody>
-                        </table>
+                         </table>
                         <div id="userPagination" class="pagination"></div>
                     </div>
                 </section>
@@ -1533,10 +1533,10 @@
                                         <th class="p-4">Şiddet Değ.</th>
                                         <th class="p-4">Risk Değeri</th>
                                         <th class="p-4 text-right">İşlemler</th>
-                                    </tr>
+                                     </tr>
                                 </thead>
                                 <tbody id="analysisTableBody" class="divide-y dark:divide-slate-700"></tbody>
-                            </table>
+                             </table>
                         </div>
                         <div id="analysisPagination" class="pagination"></div>
                     </div>
@@ -2277,37 +2277,38 @@
             }
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.remove('hidden');
-            document.getElementById('btn-'+tabId).classList.add('active');
-            
-            if (tabId === 'tab-loc') {
-                document.getElementById('locSearch').value = '';
-                paginationState.locations.page = 1;
-                paginationState.locations.search = '';
-                renderPaginatedLocations();
-            }
-            if (tabId === 'tab-dept') {
-                document.getElementById('deptSearch').value = '';
-                paginationState.departments.page = 1;
-                paginationState.departments.search = '';
-                renderPaginatedDepartments();
-            }
-            if (tabId === 'tab-area') {
-                document.getElementById('areaSearch').value = '';
-                paginationState.areas.page = 1;
-                paginationState.areas.search = '';
-                renderPaginatedAreas();
-            }
-            if (tabId === 'tab-sub') {
-                document.getElementById('subSearch').value = '';
-                paginationState.subAreas.page = 1;
-                paginationState.subAreas.search = '';
-                renderPaginatedSubAreas();
-            }
-        }
+       // switchTab fonksiyonundaki Select2 başlatmalarını da güncelleyin (isteğe bağlı)
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.remove('hidden');
+    document.getElementById('btn-'+tabId).classList.add('active');
+    
+    if (tabId === 'tab-loc') {
+        document.getElementById('locSearch').value = '';
+        paginationState.locations.page = 1;
+        paginationState.locations.search = '';
+        renderPaginatedLocations();
+    }
+    if (tabId === 'tab-dept') {
+        document.getElementById('deptSearch').value = '';
+        paginationState.departments.page = 1;
+        paginationState.departments.search = '';
+        renderPaginatedDepartments();
+    }
+    if (tabId === 'tab-area') {
+        document.getElementById('areaSearch').value = '';
+        paginationState.areas.page = 1;
+        paginationState.areas.search = '';
+        renderPaginatedAreas();
+    }
+    if (tabId === 'tab-sub') {
+        document.getElementById('subSearch').value = '';
+        paginationState.subAreas.page = 1;
+        paginationState.subAreas.search = '';
+        renderPaginatedSubAreas();
+    }
+}
 
         function closeModal(id) { 
             document.getElementById(id).classList.replace('flex', 'hidden');
@@ -2933,25 +2934,43 @@
             `).join('');
         }
 
-        async function loadAllDefinitions() {
-            const { data: locs } = await _supabase.from('locations').select('*');
-            allLocations = locs || [];
-            document.getElementById('count-locs').innerText = allLocations.length;
-            renderPaginatedLocations();
+async function loadAllDefinitions() {
+    const { data: locs } = await _supabase.from('locations').select('*');
+    allLocations = locs || [];
+    document.getElementById('count-locs').innerText = allLocations.length;
+    renderPaginatedLocations();
 
-            const { data: depts } = await _supabase.from('departments').select('*, locations(location_name)');
-            allDepartments = depts || [];
-            renderPaginatedDepartments();
+    const { data: depts } = await _supabase.from('departments').select('*, locations(location_name)');
+    allDepartments = depts || [];
+    renderPaginatedDepartments();
 
-            const { data: areas } = await _supabase.from('areas').select('*, departments(dept_name, locations(location_name))');
-            allAreas = areas || [];
-            renderPaginatedAreas();
+    const { data: areas } = await _supabase.from('areas').select('*, departments(dept_name, locations(location_name))');
+    allAreas = areas || [];
+    renderPaginatedAreas();
 
-            const { data: subs } = await _supabase.from('sub_areas').select('*, areas(area_name, departments(dept_name, locations(location_name)))');
-            allSubAreas = subs || [];
-            renderPaginatedSubAreas();
-        }
-
+    // ALT SAHA - DÜZELTİLMİŞ VERSİYON
+    const { data: subs } = await _supabase
+        .from('sub_areas')
+        .select(`
+            *,
+            areas(
+                id,
+                area_name,
+                dept_id,
+                departments(
+                    id,
+                    dept_name,
+                    location_id,
+                    locations(
+                        id,
+                        location_name
+                    )
+                )
+            )
+        `);
+    allSubAreas = subs || [];
+    renderPaginatedSubAreas();
+}
         function renderDefList(targetId, data, nameKey, codeKey, type, breadFn = null) {
             document.getElementById(targetId).innerHTML = (data || []).map(i => `
                 <div class="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border rounded-2xl shadow-sm group" style="border-color: var(--light-border);">
@@ -2970,89 +2989,257 @@
             `).join('');
         }
 
-        async function openDefModal(type) {
-            document.getElementById('defForm').reset();
-            document.getElementById('currentDefType').value = type;
-            document.getElementById('currentDefId').value = '';
-            ['row-loc', 'row-dept', 'row-area'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            
-            const { data: locs } = await _supabase.from('locations').select('*');
-            fillSelect('select-loc', locs, 'location_name');
+// openDefModal fonksiyonunu güncelleyin
+async function openDefModal(type) {
+    document.getElementById('defForm').reset();
+    document.getElementById('currentDefType').value = type;
+    document.getElementById('currentDefId').value = '';
+    ['row-loc', 'row-dept', 'row-area'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    const { data: locs } = await _supabase.from('locations').select('*').order('location_name');
+    fillSelect('select-loc', locs, 'location_name');
 
-            if(type === 'department') document.getElementById('row-loc').classList.remove('hidden');
-            if(type === 'area') { document.getElementById('row-loc').classList.remove('hidden'); document.getElementById('row-dept').classList.remove('hidden'); }
-            if(type === 'sub_area') { document.getElementById('row-loc').classList.remove('hidden'); document.getElementById('row-dept').classList.remove('hidden'); document.getElementById('row-area').classList.remove('hidden'); }
-            document.getElementById('defModal').classList.replace('hidden', 'flex');
-            
-            // Select2'leri başlat
-            setTimeout(() => {
-                initializeSelect2('#select-loc');
-                initializeSelect2('#select-dept');
-                initializeSelect2('#select-area');
-            }, 100);
+    if(type === 'department') {
+        document.getElementById('row-loc').classList.remove('hidden');
+    }
+    if(type === 'area') { 
+        document.getElementById('row-loc').classList.remove('hidden');
+        document.getElementById('row-dept').classList.remove('hidden');
+    }
+    if(type === 'sub_area') { 
+        document.getElementById('row-loc').classList.remove('hidden');
+        document.getElementById('row-dept').classList.remove('hidden');
+        document.getElementById('row-area').classList.remove('hidden');
+    }
+    
+    document.getElementById('defModal').classList.replace('hidden', 'flex');
+    
+    // Select2'leri başlat (modal açıldıktan sonra)
+    setTimeout(() => {
+        initializeSelect2('#select-loc');
+        if (type === 'area' || type === 'sub_area') {
+            initializeSelect2('#select-dept');
         }
+        if (type === 'sub_area') {
+            initializeSelect2('#select-area');
+        }
+    }, 150);
+}
 
-        async function editDefEntry(type, data) {
-            await openDefModal(type);
-            document.getElementById('currentDefId').value = data.id;
-            document.getElementById('defName').value = data[type+'_name'] || data.dept_name || data.location_name;
-            document.getElementById('defCode').value = data[type+'_code'] || data.dept_code || data.location_code;
-            
-            if(type === 'department') {
-                $('#select-loc').val(data.location_id).trigger('change');
-            }
-            if(type === 'area') { 
-                $('#select-loc').val(data.departments?.location_id).trigger('change');
-                setTimeout(async () => {
-                    await filterDeptForModal(); 
+
+async function editDefEntry(type, data) {
+    await openDefModal(type);
+    document.getElementById('currentDefId').value = data.id;
+    document.getElementById('defName').value = data[type+'_name'] || data.dept_name || data.location_name;
+    document.getElementById('defCode').value = data[type+'_code'] || data.dept_code || data.location_code;
+    
+    if(type === 'department') {
+        // Departman güncelleme - lokasyon seç
+        setTimeout(() => {
+            $('#select-loc').val(data.location_id).trigger('change');
+        }, 200);
+    }
+    else if(type === 'area') {
+        // Saha güncelleme - lokasyon ve departman seç
+        console.log('Area data:', data);
+        
+        if (data.departments && data.departments.location_id) {
+            $('#select-loc').val(data.departments.location_id).trigger('change');
+            setTimeout(async () => {
+                await filterDeptForModal();
+                if (data.dept_id) {
                     $('#select-dept').val(data.dept_id).trigger('change');
-                }, 200);
+                }
+            }, 500);
+        } 
+        else if (data.location_id) {
+            $('#select-loc').val(data.location_id).trigger('change');
+            setTimeout(async () => {
+                await filterDeptForModal();
+                if (data.dept_id) {
+                    $('#select-dept').val(data.dept_id).trigger('change');
+                }
+            }, 500);
+        }
+        else if (data.dept_id) {
+            const { data: deptData } = await _supabase
+                .from('departments')
+                .select('location_id')
+                .eq('id', data.dept_id)
+                .single();
+            
+            if (deptData && deptData.location_id) {
+                $('#select-loc').val(deptData.location_id).trigger('change');
+                setTimeout(async () => {
+                    await filterDeptForModal();
+                    $('#select-dept').val(data.dept_id).trigger('change');
+                }, 500);
             }
-            if(type === 'sub_area') {
-                if (data.areas?.departments?.location_id) {
-                    $('#select-loc').val(data.areas.departments.location_id).trigger('change');
+        }
+    }
+    else if(type === 'sub_area') {
+        // ALT SAHA GÜNCELLEME - DÜZELTİLMİŞ VERSİYON
+        console.log('Sub area data:', data);
+        
+        // Önce area_id'yi al (sub_area verisinde doğrudan area_id var)
+        const areaId = data.area_id;
+        
+        if (areaId) {
+            // Area bilgilerini çek
+            const { data: areaData } = await _supabase
+                .from('areas')
+                .select('*, departments(*, locations(*))')
+                .eq('id', areaId)
+                .single();
+            
+            if (areaData) {
+                // Lokasyon seç (departman üzerinden)
+                if (areaData.departments && areaData.departments.location_id) {
+                    $('#select-loc').val(areaData.departments.location_id).trigger('change');
+                    
+                    // Departman seç
                     setTimeout(async () => {
                         await filterDeptForModal();
-                        if (data.areas?.dept_id) {
-                            $('#select-dept').val(data.areas.dept_id).trigger('change');
+                        if (areaData.dept_id) {
+                            $('#select-dept').val(areaData.dept_id).trigger('change');
+                            
+                            // Saha seç
                             setTimeout(async () => {
                                 await filterAreaForModal();
-                                if (data.area_id) {
-                                    $('#select-area').val(data.area_id).trigger('change');
+                                if (areaId) {
+                                    $('#select-area').val(areaId).trigger('change');
                                 }
-                            }, 200);
+                            }, 500);
                         }
-                    }, 200);
+                    }, 500);
+                }
+                // Eğer areaData içinde doğrudan dept_id varsa
+                else if (areaData.dept_id) {
+                    const { data: deptData } = await _supabase
+                        .from('departments')
+                        .select('location_id')
+                        .eq('id', areaData.dept_id)
+                        .single();
+                    
+                    if (deptData && deptData.location_id) {
+                        $('#select-loc').val(deptData.location_id).trigger('change');
+                        setTimeout(async () => {
+                            await filterDeptForModal();
+                            $('#select-dept').val(areaData.dept_id).trigger('change');
+                            setTimeout(async () => {
+                                await filterAreaForModal();
+                                $('#select-area').val(areaId).trigger('change');
+                            }, 500);
+                        }, 500);
+                    }
                 }
             }
         }
+        // Eğer data içinde areas nesnesi varsa (join ile gelmiş)
+        else if (data.areas) {
+            // areas içinde departments varsa
+            if (data.areas.departments && data.areas.departments.location_id) {
+                $('#select-loc').val(data.areas.departments.location_id).trigger('change');
+                setTimeout(async () => {
+                    await filterDeptForModal();
+                    if (data.areas.dept_id) {
+                        $('#select-dept').val(data.areas.dept_id).trigger('change');
+                        setTimeout(async () => {
+                            await filterAreaForModal();
+                            if (data.area_id) {
+                                $('#select-area').val(data.area_id).trigger('change');
+                            }
+                        }, 500);
+                    }
+                }, 500);
+            }
+            // areas içinde sadece dept_id varsa
+            else if (data.areas.dept_id) {
+                const { data: deptData } = await _supabase
+                    .from('departments')
+                    .select('location_id')
+                    .eq('id', data.areas.dept_id)
+                    .single();
+                
+                if (deptData && deptData.location_id) {
+                    $('#select-loc').val(deptData.location_id).trigger('change');
+                    setTimeout(async () => {
+                        await filterDeptForModal();
+                        $('#select-dept').val(data.areas.dept_id).trigger('change');
+                        setTimeout(async () => {
+                            await filterAreaForModal();
+                            if (data.area_id) {
+                                $('#select-area').val(data.area_id).trigger('change');
+                            }
+                        }, 500);
+                    }, 500);
+                }
+            }
+        }
+    }
+}
 
-        async function filterDeptForModal() { 
-            const locId = document.getElementById('select-loc').value; 
-            if (!locId) {
-                document.getElementById('select-dept').innerHTML = '<option value="">Seçiniz...</option>';
-                return;
+
+
+// filterDeptForModal fonksiyonunu güncelleyin
+async function filterDeptForModal() { 
+    const locId = document.getElementById('select-loc').value; 
+    if (!locId) {
+        const deptSelect = document.getElementById('select-dept');
+        if (deptSelect) {
+            deptSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $('#select-dept').trigger('change');
             }
-            const { data } = await _supabase.from('departments').select('*').eq('location_id', locId); 
-            fillSelect('select-dept', data, 'dept_name');
-            initializeSelect2('#select-dept');
         }
+        return;
+    }
+    const { data } = await _supabase.from('departments').select('*').eq('location_id', locId).order('dept_name'); 
+    fillSelect('select-dept', data, 'dept_name');
+    
+    // Select2'yi yeniden başlat
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        if ($('#select-dept').hasClass('select2-hidden-accessible')) {
+            $('#select-dept').select2('destroy');
+        }
+        initializeSelect2('#select-dept');
+    }
+}
         
-        async function filterAreaForModal() { 
-            const deptId = document.getElementById('select-dept').value; 
-            if (!deptId) {
-                document.getElementById('select-area').innerHTML = '<option value="">Seçiniz...</option>';
-                return;
+// filterAreaForModal fonksiyonunu güncelleyin
+async function filterAreaForModal() { 
+    const deptId = document.getElementById('select-dept').value; 
+    if (!deptId) {
+        const areaSelect = document.getElementById('select-area');
+        if (areaSelect) {
+            areaSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $('#select-area').trigger('change');
             }
-            const { data } = await _supabase.from('areas').select('*').eq('dept_id', deptId); 
-            fillSelect('select-area', data, 'area_name');
-            initializeSelect2('#select-area');
         }
+        return;
+    }
+    const { data } = await _supabase.from('areas').select('*').eq('dept_id', deptId).order('area_name'); 
+    fillSelect('select-area', data, 'area_name');
+    
+    // Select2'yi yeniden başlat
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        if ($('#select-area').hasClass('select2-hidden-accessible')) {
+            $('#select-area').select2('destroy');
+        }
+        initializeSelect2('#select-area');
+    }
+}
         
-        function fillSelect(id, data, key) { 
-            const sel = document.getElementById(id); 
-            sel.innerHTML = '<option value="">Seçiniz...</option>' + (data || []).map(d => `<option value="${d.id}">${d[key]}</option>`).join(''); 
-        }
+// fillSelect fonksiyonunu güncelleyin
+function fillSelect(id, data, key) { 
+    const sel = document.getElementById(id); 
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Seçiniz...</option>' + (data || []).map(d => `<option value="${d.id}">${d[key]}</option>`).join(''); 
+}
 
         document.getElementById('defForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -3320,7 +3507,7 @@
             const tbody = document.getElementById('analysisTableBody');
             
             if (!analyses || analyses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center p-8 text-slate-400 italic">Analiz kaydı bulunamadı</td></tr>';
+                tbody.innerHTML = '}<td colspan="10" class="text-center p-8 text-slate-400 italic">Analiz kaydı bulunamadı</td></tr>';
                 return;
             }
 
