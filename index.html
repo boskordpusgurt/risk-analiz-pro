@@ -1628,6 +1628,8 @@
                 <input type="hidden" id="userIdField">
                 <input type="text" id="userName" placeholder="Ad Soyad" required class="w-full p-4 rounded-2xl border outline-none">
                 <input type="email" id="userEmailField" placeholder="E-Posta" required class="w-full p-4 rounded-2xl border outline-none">
+		<input type="password" id="userPasswordField" placeholder="Şifre (en az 6 karakter)" class="w-full p-4 rounded-2xl border outline-none">
+
                 <select id="userRole" class="w-full p-4 rounded-2xl border font-bold">
                     <option value="user">Kullanıcı</option>
                     <option value="admin">Yönetici</option>
@@ -1972,7 +1974,7 @@
     <script>
         // SUPABASE AYARLARI
         const SUPABASE_URL = 'https://dgphmstsjhvobxpxmfdl.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRncGhtc3Rzamh2b2J4cHhtZmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Mzg4NjMsImV4cCI6MjA4OTMxNDg2M30.pryyxJpCew01NCklurT8CCpPemnS6EzuAMM7VV_o_Kk';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRncGhtc3Rzamh2b2J4cHhtZmRsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzczODg2MywiZXhwIjoyMDg5MzE0ODYzfQ.FTB3EmvL7Ujtj3pIpH2Drr5H8xmP-zKRJQhd3CiorV8';
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
@@ -2912,10 +2914,58 @@ function switchTab(tabId) {
 
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('userIdField').value;
-            const payload = { full_name: document.getElementById('userName').value, email: document.getElementById('userEmailField').value, role: document.getElementById('userRole').value };
-            const { error } = id ? await _supabase.from('profiles').update(payload).eq('id', id) : await _supabase.from('profiles').insert([payload]);
-            if(error) alert(error.message); else { closeModal('userModal'); loadUsers(); }
+           const id = document.getElementById('userIdField').value;
+const name = document.getElementById('userName').value;
+const email = document.getElementById('userEmailField').value;
+const role = document.getElementById('userRole').value;
+const password = document.getElementById('userPasswordField').value;
+
+if (!id) { // Yeni kullanıcı ekleme
+  if (!password || password.length < 6) {
+    alert('Yeni kullanıcı için en az 6 karakterli bir şifre girin.');
+    return;
+  }
+
+  // Supabase Auth’ta kullanıcı oluştur
+  const { data: userData, error: authError } = await _supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: name }
+  });
+
+  if (authError) return alert('Auth hata: ' + authError.message);
+
+  const newUserId = userData?.user?.id;
+  if (!newUserId) return alert('Kullanıcı oluşturulamadı.');
+
+  // Profiles tablosuna kaydet
+  const { error: profileError } = await _supabase.from('profiles').upsert([{
+  id: newUserId,
+  full_name: name,
+  email,
+  role
+}]);
+  if (profileError) return alert('Profil kaydı hata: ' + profileError.message);
+}
+
+else { // Kullanıcı düzenleme
+  const { error: profileError } = await _supabase
+    .from('profiles')
+    .update({ full_name: name, email, role })
+    .eq('id', id);
+  if (profileError) return alert('Profil güncelleme hata: ' + profileError.message);
+
+  // Eğer şifre girildiyse auth tarafında güncelle
+  if (password && password.length >= 6) {
+    const { error: passError } = await _supabase.auth.admin.updateUserById(id, { password });
+    if (passError) alert('Şifre güncellenemedi: ' + passError.message);
+  }
+}
+
+closeModal('userModal');
+loadUsers();
+
         });
 
         function renderUsers(users) {
